@@ -1,22 +1,17 @@
 import slack
 import os
-import requests
 import boto3
-from flask import Flask, jsonify, make_response, request, Response
+from flask import Flask, request, Response
 from pathlib import Path
 from dotenv import load_dotenv
-from slackeventsapi import SlackEventAdapter
 
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 
 app = Flask(__name__)
-slack_event_adapter = SlackEventAdapter(os.environ['SIGNING_SECRET'], '/slack/events', app)
 
 client = slack.WebClient(token=os.environ['SLACK_TOKEN'])
 codepipeline = boto3.client('codepipeline')
-
-BOT_ID = client.api_call("auth.test")['user_id']
 
 @app.route('/pipelines', methods=['POST'])
 def pipelines():
@@ -73,6 +68,36 @@ def pipeline_executions():
         pipelineInfo += "    Last Update: " + execution['lastUpdateTime'].strftime("%m/%d/%Y, %H:%M:%S") + "\n"
         pipelineInfo += "    Trigger: " + execution['trigger']['triggerType'] + "\n"
     client.chat_postMessage(channel=channel_id, text=pipelineInfo)
+    return Response(), 200
+
+@app.route('/pipelines_status_all', methods=['POST'])
+def pipelines_status_all():
+    data = request.form
+    channel_id = data.get('channel_id')
+    response = codepipeline.list_pipelines(
+        maxResults=10
+    )
+    for pipeline in response['pipelines']:
+        pipelineInfo = ""
+        pipelineInfo += "Name: " + pipeline['name'] + "\n"
+        pipelineStatus = codepipeline.list_pipeline_executions(
+            pipelineName=pipeline['name'],
+            maxResults=1
+        )
+        pipelineInfo += "    Status: " + pipelineStatus['pipelineExecutionSummaries'][0]['status'] + "\n"
+        pipelineInfo += "    Start Time: " + pipelineStatus['pipelineExecutionSummaries'][0]['startTime'].strftime("%m/%d/%Y, %H:%M:%S") + "\n"
+        client.chat_postMessage(channel=channel_id, text=pipelineInfo)
+    return Response(), 200
+
+@app.route('/pipeline_start', methods=['POST'])
+def pipeline_start():
+    data = request.form
+    channel_id = data.get('channel_id')
+    pipelineName = request.form.get('text', None)
+    response = codepipeline.start_pipeline_execution(
+        name=pipelineName
+    )
+    client.chat_postMessage(channel=channel_id, text=f"Starting {pipelineName}. pipelineExecutionId is {response['pipelineExecutionId']}")
     return Response(), 200
 
 if __name__ == "__main__":

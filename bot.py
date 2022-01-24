@@ -5,14 +5,18 @@ from flask import Flask, request, Response
 from pathlib import Path
 from dotenv import load_dotenv
 
+# Import SLACK_TOKEN and SIGNING_SECRET for integration with local Slack instance.
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 
+# Initialize Flask, used to send /slash commands.
 app = Flask(__name__)
 
+# Initialize SDK's for Slack (slack.WebClient) and AWS (boto3) integration.
 client = slack.WebClient(token=os.environ['SLACK_TOKEN'])
 codepipeline = boto3.client('codepipeline')
 
+# Returns names of all CodePipeline pipelines.
 @app.route('/pipelines', methods=['POST'])
 def pipelines():
     data = request.form
@@ -28,14 +32,18 @@ def pipelines():
         client.chat_postMessage(channel=channel_id, text=pipelineInfo)
     return Response(), 200
 
+# Lists detailed information about the requested pipeline. Pass in pipeline name as an argument.
 @app.route('/pipeline_detail', methods=['POST'])
 def pipeline_detail():
     data = request.form
     channel_id = data.get('channel_id')
     pipelineName = request.form.get('text', None)
-    response = codepipeline.get_pipeline(
-        name=pipelineName
-    )
+    try:
+        response = codepipeline.get_pipeline(
+            name=pipelineName
+        )
+    except Exception as e:
+        return(str(e))
     pipelineInfo = "Name: " + response['pipeline']['name']
     pipelineInfo += "\n" + "Version: " + str(response['pipeline']['version'])
     pipelineInfo += "\n" + "Created: " + response['metadata']['created'].strftime("%m/%d/%Y, %H:%M:%S")
@@ -51,15 +59,19 @@ def pipeline_detail():
     client.chat_postMessage(channel=channel_id, text=pipelineInfo)
     return Response(), 200
 
+# Lists information about 5 most recent pipeline executions. Pass in pipeline name as an argument.
 @app.route('/pipeline_executions', methods=['POST'])
 def pipeline_executions():
     data = request.form
     channel_id = data.get('channel_id')
     pipelineName = request.form.get('text', None)
-    response = codepipeline.list_pipeline_executions(
-        pipelineName=pipelineName,
-        maxResults=5
-    )
+    try:
+        response = codepipeline.list_pipeline_executions(
+            pipelineName=pipelineName,
+            maxResults=5
+        )
+    except Exception as e:
+        return(str(e))
     pipelineInfo = ""
     for execution in response['pipelineExecutionSummaries']:
         pipelineInfo += "Execution ID: " + execution['pipelineExecutionId'] + "\n"
@@ -70,6 +82,7 @@ def pipeline_executions():
     client.chat_postMessage(channel=channel_id, text=pipelineInfo)
     return Response(), 200
 
+# Returns the status of the most recent run for all pipelines.
 @app.route('/pipelines_status_all', methods=['POST'])
 def pipelines_status_all():
     data = request.form
@@ -89,14 +102,18 @@ def pipelines_status_all():
         client.chat_postMessage(channel=channel_id, text=pipelineInfo)
     return Response(), 200
 
+# Triggers pipeline start. Pass in pipeline name as an argument.
 @app.route('/pipeline_start', methods=['POST'])
 def pipeline_start():
     data = request.form
     channel_id = data.get('channel_id')
     pipelineName = request.form.get('text', None)
-    response = codepipeline.start_pipeline_execution(
-        name=pipelineName
-    )
+    try:
+        response = codepipeline.start_pipeline_execution(
+            name=pipelineName
+        )
+    except Exception as e:
+        return(str(e))        
     client.chat_postMessage(channel=channel_id, text=f"Starting {pipelineName}. pipelineExecutionId is {response['pipelineExecutionId']}")
     return Response(), 200
 

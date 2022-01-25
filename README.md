@@ -5,10 +5,10 @@ codepipeline-slack is a Slack app that supports interacting with AWS CodePipelin
 These are the following slash commands supported:
 
 `/pipelines` </br>
-Returns all CodePipeline pipelines
+Returns 10 CodePipeline pipelines
 
 `/pipelines_status_all` </br>
-Returns the status of the most recent run for all pipelines
+Returns the status of the most recent run for 10 pipelines
 
 `/pipeline_detail <pipeline-name>` </br>
 Lists detailed information about the requested pipeline

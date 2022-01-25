@@ -26,9 +26,9 @@ def pipelines():
     )
     for pipeline in response['pipelines']:
         pipelineInfo = ""
-        pipelineInfo += "Name: " + pipeline['name']
-        pipelineInfo += "\n" + "Created: " + pipeline['created'].strftime("%m/%d/%Y, %H:%M:%S")
-        pipelineInfo += "\n" + "Updated: " + pipeline['updated'].strftime("%m/%d/%Y, %H:%M:%S")
+        pipelineInfo += "Name: " + pipeline['name'] + "\n"
+        pipelineInfo += "Created: " + pipeline['created'].strftime("%m/%d/%Y, %H:%M:%S") + "\n"
+        pipelineInfo += "Updated: " + pipeline['updated'].strftime("%m/%d/%Y, %H:%M:%S") + "\n"
         client.chat_postMessage(channel=channel_id, text=pipelineInfo)
     return Response(), 200
 
@@ -37,25 +37,25 @@ def pipelines():
 def pipeline_detail():
     data = request.form
     channel_id = data.get('channel_id')
-    pipelineName = request.form.get('text', None)
+    pipelineName = data.get('text', None)
     try:
         response = codepipeline.get_pipeline(
             name=pipelineName
         )
     except Exception as e:
         return(str(e))
-    pipelineInfo = "Name: " + response['pipeline']['name']
-    pipelineInfo += "\n" + "Version: " + str(response['pipeline']['version'])
-    pipelineInfo += "\n" + "Created: " + response['metadata']['created'].strftime("%m/%d/%Y, %H:%M:%S")
-    pipelineInfo += "\n" + "Updated: " + response['metadata']['updated'].strftime("%m/%d/%Y, %H:%M:%S")
-    pipelineInfo += "\n" + "Artifact Location: " + response['pipeline']['artifactStore']['location']
-    pipelineInfo += "\n" + "Artifact Type: " + response['pipeline']['artifactStore']['type']
+    pipelineInfo = "Name: " + response['pipeline']['name'] + "\n"
+    pipelineInfo += "Version: " + str(response['pipeline']['version']) + "\n"
+    pipelineInfo += "Created: " + response['metadata']['created'].strftime("%m/%d/%Y, %H:%M:%S") + "\n"
+    pipelineInfo += "Updated: " + response['metadata']['updated'].strftime("%m/%d/%Y, %H:%M:%S") + "\n"
+    pipelineInfo += "Artifact Location: " + response['pipeline']['artifactStore']['location'] + "\n"
+    pipelineInfo += "Artifact Type: " + response['pipeline']['artifactStore']['type'] + "\n"
     for stage in response['pipeline']['stages']:
-        pipelineInfo += "\n" + "Stage Name: " + stage['name']
+        pipelineInfo += "Stage Name: " + stage['name'] + "\n"
         for action in stage['actions']:
-            pipelineInfo += "\n" + "    Action Name: " + action['name']
-            pipelineInfo += "\n" + "        Action Region: " + action['region']
-            pipelineInfo += "\n" + "        Action Order: " + str(action['runOrder'])
+            pipelineInfo += "    Action Name: " + action['name'] + "\n"
+            pipelineInfo += "        Action Region: " + action['region'] + "\n"
+            pipelineInfo += "        Action Order: " + str(action['runOrder']) + "\n"
     client.chat_postMessage(channel=channel_id, text=pipelineInfo)
     return Response(), 200
 
@@ -64,7 +64,7 @@ def pipeline_detail():
 def pipeline_executions():
     data = request.form
     channel_id = data.get('channel_id')
-    pipelineName = request.form.get('text', None)
+    pipelineName = data.get('text', None)
     try:
         response = codepipeline.list_pipeline_executions(
             pipelineName=pipelineName,
@@ -107,7 +107,7 @@ def pipelines_status_all():
 def pipeline_start():
     data = request.form
     channel_id = data.get('channel_id')
-    pipelineName = request.form.get('text', None)
+    pipelineName = data.get('text', None)
     try:
         response = codepipeline.start_pipeline_execution(
             name=pipelineName
